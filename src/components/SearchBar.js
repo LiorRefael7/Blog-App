@@ -16,7 +16,7 @@ const Search = styled('div')(({ theme }) => ({
     backgroundColor: alpha(theme.palette.common.white, 0.25),
   },
   flexGrow: 5, // Adjust the width here
-  marginLeft: theme.spacing(40), // Adjust the margin here
+  marginLeft: theme.spacing(35), // Adjust the margin here
   width: 'auto',
 }));
 
