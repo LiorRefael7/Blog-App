@@ -54,7 +54,7 @@ def register():
 	values = (data['user'], )
 	cursor ,db = excute_sql_query(query, values)
 	record = cursor.fetchone()
-	cursor.close()
+	close_resources(cursor, db)
 
 	if record == None: ## if username is not in the database
 		query = "insert into users (username, password, email, created_at) values (%s, %s, %s, %s)"
@@ -64,7 +64,6 @@ def register():
 		cursor, db = commit_sql_query(query, values)
 		close_resources(cursor, db)
 	else:
-		db.close()
 		abort(401, 'user exists')
 
 	resp = make_response()
@@ -77,17 +76,15 @@ def login():
 	values = (data['user'], )
 	cursor, db = excute_sql_query(query, values)
 	record = cursor.fetchone()
-	cursor.close()
-	
-	if not record:
-		db.close()
+	close_resources(cursor, db)
+
+	if not record:		
 		abort(401, 'user doesnt exists')
 
 	user_id = record[0]
 	hashed_pwd = record[2].encode('utf-8')
 
 	if bcrypt.hashpw(data['pass'].encode('utf-8'), hashed_pwd) != hashed_pwd:
-		db.close()
 		abort(401, 'wrong password')
 
 	query = "insert into sessions (user_id, session_id) values (%s, %s)"
@@ -237,7 +234,7 @@ def get_popular_posts():
 	cursor = db.cursor()
 	cursor.execute(query)
 	records = cursor.fetchall()
-	cursor.close()
+	close_resources(cursor, db)
 	posts_ids = [record[0] for record in records]
 	query = "select id, title from posts where id in (%s, %s, %s)"
 	values = (posts_ids[0], posts_ids[1], posts_ids[2])
@@ -280,11 +277,11 @@ def search_posts():
 	values = (search_term, search_term)
 	cursor, db = excute_sql_query(query, values)
 	records = cursor.fetchall()
-	
+	close_resources(cursor, db)	
+
 	if records == None:
 		return {"status": "error", "message": "No posts found"}
 	
-	close_resources(cursor, db)	
 	header = ['id', 'title', 'text', 'user_id', 'username', 'date']
 	data = []
 	for r in records:
