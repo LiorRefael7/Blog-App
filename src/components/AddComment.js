@@ -29,7 +29,7 @@ const AddComment = ({ postId }) => {
       commentTitle: titleValue,
       commentText: textValue,
     };
-    const url = "http://localhost:5000/addComment";
+    const url = "http://localhost:5000/Comment";
     axios.post(url, data)
       .then((res) => {
         console.log("Comment added successfuly.");

@@ -11,6 +11,7 @@ import SignupPage from './components/SignUp';
 import MyPosts from './components/MyPosts';
 import SearchPageWrapper from './components/SearchPageWrapper';
 import About from './components/About';
+import TagsPageWrapper from './components/TagsPageWrapper';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/signout" element={<SignOut />} />
           <Route path="/post/:id" element={<PostPageWrapper />} />
           <Route path="/search/:searchTerm" element={<SearchPageWrapper />} />
+          <Route path="/searchTag/:searchTerm" element={<TagsPageWrapper />} />
           <Route path="/register" element={<SignupPage />} />
           <Route path="/MyPosts" element={<MyPosts />} />
         </Routes>

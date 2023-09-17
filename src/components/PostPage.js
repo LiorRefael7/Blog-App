@@ -4,7 +4,7 @@ import Comment from './Comment';
 import AddComment from './AddComment';
 import styled from 'styled-components';
 import LikeBtn from './LikeBtn';
-
+import { useHistory } from 'react-router-dom';
 
 // Define styled components
 const PostContainer = styled.div`
@@ -41,6 +41,8 @@ class PostPage extends Component {
       user_id: props.user_id,
       username: props.username,
       comments: [],
+      tags: props.tags,
+      navigate: props.navigate,
     };
   }
 
@@ -49,8 +51,7 @@ class PostPage extends Component {
     const data = {
       postId: id,
       cookie: document.cookie
-    };
-
+    };  
     axios.post(url, data, {withCredentials: true})
       .then((res) => {
         console.log("liked comment");
@@ -60,6 +61,12 @@ class PostPage extends Component {
       });
       // Prevent the click event from propagating to the parent div and triggering handleClick
       e.stopPropagation();  
+  };
+
+  handleTagClick = (tag) => (e) => {
+    //e.stopPropagation(); // Prevent the default behavior of the button click
+    const searchTerm = tag;
+    this.props.navigate(`/searchTag/${searchTerm}`, { state: { searchTerm } });
   };
 
   componentDidMount() {
@@ -81,6 +88,13 @@ class PostPage extends Component {
         <Title>{this.state.title}</Title>
         <Text>{this.state.text}</Text>
         <p className="post-date">Posted by {this.state.user_id} on {this.state.date}</p>
+        <p>
+          {this.state.tags.map((tag) => (
+            <button onClick={this.handleTagClick(tag)}>
+              {"#" + tag + " "}
+            </button>
+          ))}
+        </p>
         <LikeBtn postId={this.state.postId}/>
         <CommentsContainer>
           <h2>Comments</h2>

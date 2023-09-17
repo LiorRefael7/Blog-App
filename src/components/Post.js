@@ -4,13 +4,19 @@ import DeletePostDialog from "./DeletePostDialog";
 import EditPostDialog from "./EditPostDialog";
 import LikeBtn from "./LikeBtn";
 
-const Post = ({ user_id, title, text, date, id, username, showButtons, showFullPost }) => {
+const Post = ({ user_id, title, text, date, id, username, tags, showButtons, showFullPost }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
     if (!showButtons) {
-      navigate(`/post/${id}`, { state: { user_id, title, text, date, id, username } });
+      navigate(`/post/${id}`, { state: { user_id, title, text, date, id, username, tags } });
     }
+  };
+
+  const handleTagClick = (tag) => (e) => {
+    e.stopPropagation(); // Prevent the default behavior of the button click
+    const searchTerm = tag;
+    navigate(`/searchTag/${searchTerm}`, { state: { searchTerm } });
   };
 
   return (
@@ -19,6 +25,13 @@ const Post = ({ user_id, title, text, date, id, username, showButtons, showFullP
       <h2>{title}</h2>
       {showFullPost ? <p>{text}</p> : <p>{text.substring(0, 500)}...</p>}
       <p className="post-date">Posted by {username} on {date}</p>
+      <p>
+        {tags.map((tag) => (
+          <button onClick={handleTagClick(tag)}>
+            {"#" + tag + " "}
+          </button>
+        ))}
+      </p>
       {showButtons && (
         <div className="button-container">
           <DeletePostDialog postId={id} />
@@ -27,10 +40,9 @@ const Post = ({ user_id, title, text, date, id, username, showButtons, showFullP
       )}
       {!showButtons && (
         <div>
-          <LikeBtn postId={id}/>
+          <LikeBtn postId={id} />
         </div>
       )}
-      
     </div>
   );
 };

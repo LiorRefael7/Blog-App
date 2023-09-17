@@ -33,6 +33,7 @@ class PostsList extends React.Component {
             date={post.date}
             id={post.id}
             username={post.user_name}
+            tags={post.tags || []}
           />
         ))}
       </div>

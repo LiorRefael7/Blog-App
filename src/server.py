@@ -7,6 +7,8 @@ import json
 import uuid
 import bcrypt
 import mysql.connector, mysql.connector.pooling
+import re
+
 
 pool = mysql.connector.pooling.MySQLConnectionPool(
     host = "localhost",
@@ -104,9 +106,11 @@ def get_all_posts():
 	cursor.execute(query)
 	records = cursor.fetchall()
 	close_resources(cursor, db)
-	header = ['id', 'title', 'text', 'user_id', 'date', 'user_name']
+	header = ['id', 'title', 'text', 'user_id', 'date', 'user_name', 'tags']
 	data = []
 	for r in records:
+		r = list(r)
+		r.append(get_post_tags(r[0]))
 		data.append(dict(zip(header, r)))
 		data.reverse()
 	return json.dumps(data)
@@ -125,7 +129,7 @@ def get_post_comments():
 		data.append(dict(zip(header, r)))
 	return json.dumps(data)
 	
-@app.route('/newpost', methods=['POST'])
+@app.route('/post', methods=['POST'])
 def add_post():
 	data = request.get_json()
 
@@ -137,13 +141,15 @@ def add_post():
 	user_id = get_userid_from_cookie(cookie)
 	user_name = get_username_from_userid(user_id)
 	current_time = create_time_stamp()
-	values = (data['title'], data['text'], user_id, user_name , current_time, current_time)
+	hashtags, text = sep_tags_text(data['text'])
+	values = (data['title'], text, user_id, user_name , current_time, current_time)
 	cursor, db = commit_sql_query(query, values)
 	new_post_id = cursor.lastrowid
 	close_resources(cursor, db)
+	add_hashtags_to_db(hashtags, new_post_id)
 	return get_post(new_post_id)
 
-@app.route('/addComment', methods=['POST'])
+@app.route('/Comment', methods=['POST'])
 def add_comment():
 	data = request.get_json()
 
@@ -170,9 +176,11 @@ def get_user_posts():
 	cursor, db = excute_sql_query(query, values)
 	records = cursor.fetchall()
 	close_resources(cursor, db)
-	header = ['id', 'title', 'text', 'user_id', 'username', 'date']
+	header = ['id', 'title', 'text', 'user_id', 'username', 'date', 'tags']
 	data = []
 	for r in records:
+		r = list(r)
+		r.append(get_post_tags(r[0]))
 		data.append(dict(zip(header, r)))
 		data.reverse()
 	return json.dumps(data)
@@ -192,9 +200,10 @@ def get_user_comments():
 		data.append(dict(zip(header, r)))
 	return json.dumps(data)
 
-@app.route('/deleteUserPost', methods=['POST'])
+@app.route('/UserPost', methods=['DELETE'])
 def delete_user_post():
 	data = request.get_json()
+	validation_of_author(data['postId'], data['cookie'].split('=')[1])
 	query = "delete from posts where id = %s"
 	values = (data['postId'], )
 	cursor, db = commit_sql_query(query, values)
@@ -202,9 +211,10 @@ def delete_user_post():
 	resp = make_response()
 	return resp
 
-@app.route('/editUserPost', methods=['POST'])
+@app.route('/UserPost', methods=['PUT'])
 def edit_user_post():
 	data = request.get_json()
+	validation_of_author(data['postId'], data['cookie'].split('=')[1])
 	query = "update posts set title=%s, content=%s, last_update=%s where id = %s"
 	values = (data['postTitle'], data['postText'], create_time_stamp() , data['postId'])
 	cursor, db = commit_sql_query(query, values)
@@ -281,13 +291,97 @@ def search_posts():
 
 	if records == None:
 		return {"status": "error", "message": "No posts found"}
-	
+
+	hashtags_posts = search_by_hashtag(search_term)
+	if hashtags_posts != None:
+		for post in hashtags_posts:
+			if post not in records:
+				records.append(post)
+
 	header = ['id', 'title', 'text', 'user_id', 'username', 'date']
 	data = []
 	for r in records:
 		data.append(dict(zip(header, r)))
 		data.reverse()
-	return json.dumps(data)	
+	return json.dumps(data)
+
+@app.route('/searchPostsWithTag', methods=['POST'])
+def search_posts_with_tag():
+	data = request.get_json()
+	values = (data['searchTerm'], )
+	query = "select post_id from tags1 where tag_name = %s"
+	cursor, db = excute_sql_query(query, values)
+	posts_id = cursor.fetchall()
+	close_resources(cursor, db)
+	records = []
+	for post in posts_id:		
+		query = "select id, title, content, user_id, username, created_at from posts where id = %s"
+		values = (post[0], )
+		cursor, db = excute_sql_query(query, values)
+		records.append(cursor.fetchone())
+		close_resources(cursor, db)	
+
+	if records == None:
+		return {"status": "error", "message": "No posts found"}
+
+	header = ['id', 'title', 'text', 'user_id', 'username', 'date']
+	data = []
+	for r in records:
+		data.append(dict(zip(header, r)))
+		data.reverse()
+	return json.dumps(data)
+
+def validation_of_author(post_id, user_cookie):
+	user_id = get_userid_from_cookie(user_cookie)
+	query = "select user_id from posts where id=%s"
+	values = (post_id, )
+	cursor, db = excute_sql_query(query, values)
+	record = cursor.fetchone()
+	if record[0] == user_id:
+		return
+	
+	abort(401, 'Only the author can modify the post.')
+
+
+def get_post_tags(post_id):
+	query = "select tag_name from tags1 where post_id = %s"
+	values= (post_id, )
+	cursor, db = excute_sql_query(query, values)
+	records = cursor.fetchall()
+	close_resources(cursor, db)
+	if records == None:
+		return []
+	flat_records = [tag for tags in records for tag in tags]
+	return flat_records
+
+def search_by_hashtag(search_term):
+	query = "select post_id from tags where tag_name like %s"
+	values = (search_term, )
+	cursor, db = excute_sql_query(query, values)
+	records = cursor.fetchall()
+	retVal = []
+	for record in records:
+		query = '''select id, title, content, user_id, username, created_at from posts where
+					id = %s'''
+		values = (record[0], )
+		cursor.execute(query, values)
+		retVal.append(cursor.fetchone())
+	
+	close_resources(cursor, db)
+	return retVal
+
+
+def sep_tags_text(text):
+	hashtags = re.findall(r'#(\w+)', text)
+	text_without_hashtags = re.sub(r'#\w+', '', text)
+	return hashtags, text_without_hashtags
+
+def add_hashtags_to_db(hashtags, new_post_id):
+	for hashtag in hashtags:
+		query = "insert into tags1 (tag_name, post_id) values (%s,%s)"
+		values = (hashtag, new_post_id)
+		cursor, db = commit_sql_query(query, values)
+		close_resources(cursor, db)
 
 def user_liked_post(user_id, post_id):
 	query = "select user_id from likes where (user_id = %s and post_id = %s)"

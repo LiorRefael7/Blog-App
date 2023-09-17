@@ -27,9 +27,10 @@ const EditPostDialog = ({ postId, postTitle, postText }) => {
       postId: postId, 
       postTitle: titleValue,
       postText: textValue,
+      cookie: document.cookie,
     };
-    const url = "http://localhost:5000/editUserPost";
-    axios.post(url, data)
+    const url = "http://localhost:5000/UserPost";
+    axios.put(url, data)
       .then((res) => {
         console.log("Post edited successfuly.");
         window.location.replace("/MyPosts");

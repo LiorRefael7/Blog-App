@@ -46,6 +46,7 @@ function MyPosts() {
           id={post.id}
           username={post.username}
           showButtons={true}
+          tags={post.tags || []}
           />
         ))}
       </div>

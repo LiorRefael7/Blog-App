@@ -35,7 +35,7 @@ class NewPost extends React.Component {
   }
 
   addPost = () => {
-    const url = 'http://localhost:5000/newpost';
+    const url = 'http://localhost:5000/post';
     const data = {
       title: this.state.title,
       text: this.state.text,

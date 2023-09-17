@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
-import { styled, alpha } from '@mui/material/styles'; // Import alpha for background color opacity
-
+import { styled, alpha } from '@mui/material/styles'; 
 import { useNavigate } from "react-router-dom";
 
 const Search = styled('div')(({ theme }) => ({
@@ -35,6 +33,7 @@ const SearchBar = () => {
   const navigate = useNavigate();
 
   const handleSearch = () => {
+    setSearchTerm("")
     navigate(`/search/${searchTerm}`, { state: { searchTerm } });
   };
 

@@ -12,10 +12,11 @@ const DeletePostDialog = ({ postId }) => {
   const handleDelete = () => {
     setOpen(false);
     const data = {
-      postId: postId, 
+      postId: postId,
+      cookie: document.cookie, 
     };
-    const url = "http://localhost:5000/deleteUserPost";
-    axios.post(url, data)
+    const url = "http://localhost:5000/UserPost";
+    axios.delete(url, data)
       .then((res) => {
         console.log("Post deleted successfuly.");
         window.location.replace("/MyPosts");

@@ -12,7 +12,7 @@ const PostContainer = styled.div`
   margin: 20px;
 `;
 
-class SearchPage extends Component {
+class TagsPage extends Component {
     constructor(props) {
       super(props);
       this.state = {
@@ -22,12 +22,11 @@ class SearchPage extends Component {
       };
     }
 
-    // Create a function to fetch data
-    fetchData = () => {
+    componentDidMount() {
         const data = {
             searchTerm: this.state.searchTerm,
         };
-        const Url = "http://localhost:5000/searchPosts";
+        const Url = "http://localhost:5000/searchPostsWithTag";
         axios.post(Url, data, { withCredentials: true }).then((res) => {
           if (res.data.status === "error") { 
             console.log("No posts found");
@@ -38,22 +37,7 @@ class SearchPage extends Component {
               });
           }
         });
-    }
-
-    componentDidMount() {
-        // Fetch data initially
-        this.fetchData();
-    }
-
-    // Update the component when the searchTerm prop changes
-    componentDidUpdate(prevProps) {
-        if (this.props.searchTerm !== prevProps.searchTerm) {
-            // Fetch data again when the searchTerm changes
-            this.setState({ searchTerm: this.props.searchTerm }, () => {
-                this.fetchData();
-            });
-        }
-    }
+      }
 
     render() {
         return (
@@ -67,7 +51,7 @@ class SearchPage extends Component {
                     date={post.date}
                     id={post.id}
                     username={post.user_name}
-                    tags={[]}
+                    tags={post.tags || []}
                 />
                 ))}
             </PostContainer>
@@ -75,4 +59,5 @@ class SearchPage extends Component {
     }
 }
 
-export default SearchPage;
+export default TagsPage;
+    
